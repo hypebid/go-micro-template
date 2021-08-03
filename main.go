@@ -2,108 +2,65 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"net"
-	"net/http"
+	"os"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/render"
-	"github.com/hypebid/go-micro-template/internal/config"
-	"github.com/hypebid/go-micro-template/internal/drpc"
-	"github.com/hypebid/go-micro-template/internal/drpc/pb"
-	"github.com/hypebid/go-micro-template/internal/rest/controllers"
-	"golang.org/x/sync/errgroup"
-	"storj.io/drpc/drpchttp"
-	"storj.io/drpc/drpcmigrate"
-	"storj.io/drpc/drpcmux"
-	"storj.io/drpc/drpcserver"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/hypebid/go-micro-template/internal/grpc/pb"
+	"google.golang.org/grpc"
 )
 
+type server struct {
+	pb.UnimplementedGreeterServer
+}
+
+// SayHello implements grpc helloworld.GreeterServer
+func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+	log.Printf("Received: %v\n", in.GetName())
+
+	return &pb.HelloReply{Message: fmt.Sprintf("Hello %v\n", in.GetName())}, nil
+}
+
+func init() {
+	log.SetFormatter(&log.JSONFormatter{})
+
+	log.SetOutput(os.Stdout)
+
+	log.SetLevel(log.InfoLevel)
+}
+
 func main() {
-	err := start(context.Background())
-	if err != nil {
-		panic(err)
-	}
-}
+	// var logrusLogger *log.Logger
 
-func routes(c *config.Config) *chi.Mux {
-	r := chi.NewRouter()
+	// logrusEntry := log.NewEntry(logrusLogger)
+	opts := []grpc_logrus.Option{}
 
-	// TODO: set up logger
+	// grpc_logrus.ReplaceGrpcLogger(logrusEntry)
 
-	// add middleware to router
-	r.Use(render.SetContentType(render.ContentTypeJSON),
-		middleware.RequestID,
-		middleware.RedirectSlashes,
-		middleware.Recoverer,
-	)
-
-	r.Route("/v1", func(r chi.Router) {
-		r.Mount("/heartbeat", controllers.HeartbeatRoutes(c))
-	})
-
-	return r
-}
-
-func start(ctx context.Context) error {
-	// create config
-	// c := config.New()
-
-	// create a RPC server
-	cookieMonster := &drpc.CookieMonsterServer{}
-
-	// create a dRPC RPC mux
-	drpcMux := drpcmux.New()
-
-	// register the proto-spcecific methods on the mux
-	err := pb.DRPCRegisterCookieMonster(drpcMux, cookieMonster)
-	if err != nil {
-		return err
-	}
-
-	// listen on a tcp socket
 	lis, err := net.Listen("tcp", ":8080")
 	if err != nil {
-		return err
+		log.Fatalf("Failed to listen: %v\n", err)
 	}
 
-	// create a listen mux that evalutes enough bytes to recognize the dRPC header
-	lisMux := drpcmigrate.NewListenMux(lis, len(drpcmigrate.DRPCHeader))
+	grpcServer := grpc.NewServer(
+		grpc_middleware.WithStreamServerChain(
+			grpc_ctxtags.StreamServerInterceptor(),
+			grpc_logrus.StreamServerInterceptor(log.NewEntry(log.New()), opts...)),
+		grpc_middleware.WithUnaryServerChain(
+			grpc_ctxtags.UnaryServerInterceptor(),
+			grpc_logrus.UnaryServerInterceptor(log.NewEntry(log.New()), opts...)),
+	)
 
-	// creating group to run different protocol servers in parallel.
-	var group errgroup.Group
+	pb.RegisterGreeterServer(grpcServer, &server{})
 
-	// drpc handling
-	group.Go(func() error {
-		// create a dRPC server
-		drpcServer := drpcserver.New(drpcMux)
+	log.Println("Server listening on 8080")
 
-		// grab the listen mux route for the dRPC header
-		drpcLis := lisMux.Route(drpcmigrate.DRPCHeader)
-
-		//run the server
-		log.Println("dRPC server running...")
-		return drpcServer.Serve(ctx, drpcLis)
-	})
-
-	// http handling for dRPC methods
-	group.Go(func() error {
-		// create an http server
-		// router := routes(c, drpcMux)
-		httpServer := http.Server{Handler: drpchttp.New(drpcMux)}
-
-		// run the server
-		log.Println("http server running...")
-		return httpServer.Serve(lisMux.Default())
-	})
-
-	// run the listen mux
-	group.Go(func() error {
-		return lisMux.Run(ctx)
-	})
-
-	// wait
-	log.Println("service running on port :8080")
-	return group.Wait()
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v\n", err)
+	}
 }
