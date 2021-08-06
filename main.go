@@ -1,46 +1,29 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"net"
 	"os"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
-	"github.com/hypebid/go-micro-template/internal/grpc/pb"
+	"github.com/hypebid/go-micro-template/internal/rpc"
+	"github.com/hypebid/go-micro-template/internal/rpc/pb"
 	"google.golang.org/grpc"
 )
 
-type server struct {
-	pb.UnimplementedGreeterServer
-}
-
-// SayHello implements grpc helloworld.GreeterServer
-func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	log.Printf("Received: %v\n", in.GetName())
-
-	return &pb.HelloReply{Message: fmt.Sprintf("Hello %v\n", in.GetName())}, nil
-}
-
-func init() {
-	log.SetFormatter(&log.JSONFormatter{})
-
-	log.SetOutput(os.Stdout)
-
-	log.SetLevel(log.InfoLevel)
-}
+var log = logrus.New()
 
 func main() {
-	// var logrusLogger *log.Logger
-
-	// logrusEntry := log.NewEntry(logrusLogger)
+	log.SetFormatter(&logrus.TextFormatter{
+		DisableColors: true,
+		FullTimestamp: true,
+	})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(logrus.InfoLevel)
 	opts := []grpc_logrus.Option{}
-
-	// grpc_logrus.ReplaceGrpcLogger(logrusEntry)
 
 	lis, err := net.Listen("tcp", ":8080")
 	if err != nil {
@@ -50,13 +33,13 @@ func main() {
 	grpcServer := grpc.NewServer(
 		grpc_middleware.WithStreamServerChain(
 			grpc_ctxtags.StreamServerInterceptor(),
-			grpc_logrus.StreamServerInterceptor(log.NewEntry(log.New()), opts...)),
+			grpc_logrus.StreamServerInterceptor(logrus.NewEntry(log), opts...)),
 		grpc_middleware.WithUnaryServerChain(
 			grpc_ctxtags.UnaryServerInterceptor(),
-			grpc_logrus.UnaryServerInterceptor(log.NewEntry(log.New()), opts...)),
+			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(log), opts...)),
 	)
 
-	pb.RegisterGreeterServer(grpcServer, &server{})
+	pb.RegisterServiceNameServer(grpcServer, &rpc.Server{})
 
 	log.Println("Server listening on 8080")
 
