@@ -15,18 +15,18 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=postgres
 
-  serviceName-app:
-    image: serviceName:latest
-    network_mode: bridge
-    container_name: serviceName-app
-    build: .
-    expose:
-      - 8880
-    ports:
-      - 8880:8880
-    depends_on:
-      - serviceName-postgres
-    links:
-      - serviceName-postgres
+  # serviceName-app:
+  #   image: serviceName:latest
+  #   network_mode: bridge
+  #   container_name: serviceName-app
+  #   build: .
+  #   expose:
+  #     - 8880
+  #   ports:
+  #     - 8880:8880
+  #   depends_on:
+  #     - serviceName-postgres
+  #   links:
+  #     - serviceName-postgres
 volumes:
   serviceName-data:
