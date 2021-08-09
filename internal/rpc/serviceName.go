@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/hypebid/go-micro-template/internal/config"
+	"github.com/hypebid/go-micro-template/internal/db"
 	"github.com/hypebid/go-micro-template/internal/rpc/pb"
 )
 
@@ -17,8 +18,8 @@ func (s *Server) HealthCheck(ctx context.Context, req *pb.HealthRequest) (*pb.He
 
 	// ping db
 	dbOnline := false
-	ping := s.Config.Psql.DB.Raw("SELECT * FROM information_schema.information_schema_catalog_name;")
-	if ping.Error == nil {
+	ping := db.PingDB(s.Config)
+	if ping == nil {
 		dbOnline = true
 	}
 
