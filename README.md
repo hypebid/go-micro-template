@@ -5,6 +5,7 @@ A Golang micro-service template. The boilerplate code for all of Hype Bid's micr
 - gRPC Server
   - HealthCheck function
 - gRPC Inteceptors / middleware
+  - Tranaction Id
   - Logrus logger
   - ctx tags
   - Recover from panics
@@ -17,7 +18,6 @@ A Golang micro-service template. The boilerplate code for all of Hype Bid's micr
 
 ### Todo
 - Custom Middleware
-  - Transaction Id
   - Hash validation check
 - Go tests
 - Move code to go-kit
