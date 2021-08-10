@@ -3,6 +3,7 @@ package rpc
 import (
 	"context"
 
+	grpc_reqId "github.com/hypebid/go-kit/grpc/middleware/transactionId"
 	"github.com/hypebid/go-micro-template/internal/config"
 	"github.com/hypebid/go-micro-template/internal/db"
 	"github.com/hypebid/go-micro-template/internal/rpc/pb"
@@ -14,6 +15,9 @@ type Server struct {
 }
 
 func (s *Server) HealthCheck(ctx context.Context, req *pb.HealthRequest) (*pb.HealthStatus, error) {
+	// Get TransactionId from ctx
+	tId := ctx.Value(grpc_reqId.TransactionIdMarker("transaction_id_ctx_marker"))
+	s.Config.Log.Printf("TransactionId: %v", tId)
 	s.Config.Log.Printf("Received: %v", req.GetMessage())
 
 	// ping db
