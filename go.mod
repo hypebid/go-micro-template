@@ -14,4 +14,4 @@ require (
 	gorm.io/gorm v1.21.12
 )
 
-// replace github.com/hypebid/go-kit => /Users/willmini/Development/go/src/github.com/hypebid/go-kit
+replace github.com/hypebid/go-kit => /Users/willmini/Development/go/src/github.com/hypebid/go-kit

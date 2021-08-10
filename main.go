@@ -9,6 +9,7 @@ import (
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpc_reqAuth "github.com/hypebid/go-kit/grpc/middleware/auth"
 	grpc_reqId "github.com/hypebid/go-kit/grpc/middleware/transactionId"
 	"github.com/sirupsen/logrus"
 
@@ -37,11 +38,13 @@ func main() {
 	grpcServer := grpc.NewServer(
 		grpc_middleware.WithStreamServerChain(
 			grpc_reqId.StreamServerInterceptor(c.Log),
+			grpc_reqAuth.StreamServerInterceptor(c.Log),
 			grpc_ctxtags.StreamServerInterceptor(),
 			grpc_logrus.StreamServerInterceptor(logrus.NewEntry(c.Log), logOpts...),
 			grpc_recovery.StreamServerInterceptor(recovOpts...)),
 		grpc_middleware.WithUnaryServerChain(
 			grpc_reqId.UnaryServerInterceptor(c.Log),
+			grpc_reqAuth.UnaryServerInterceptor(c.Log),
 			grpc_ctxtags.UnaryServerInterceptor(),
 			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(c.Log), logOpts...),
 			grpc_recovery.UnaryServerInterceptor(recovOpts...)),

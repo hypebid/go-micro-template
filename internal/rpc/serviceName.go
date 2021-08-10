@@ -4,6 +4,7 @@ import (
 	"context"
 	"runtime"
 
+	"github.com/hypebid/go-kit/grpc/middleware"
 	"github.com/hypebid/go-micro-template/internal/config"
 	"github.com/hypebid/go-micro-template/internal/db"
 	"github.com/hypebid/go-micro-template/internal/rpc/pb"
@@ -17,7 +18,7 @@ type Server struct {
 
 func (s *Server) HealthCheck(ctx context.Context, req *pb.HealthRequest) (*pb.HealthStatus, error) {
 	// Build logger with TransactionId
-	tId := ctx.Value(s.Config.CtxMarkers.TID)
+	tId := ctx.Value(middleware.Grpc_ReqId_Marker)
 	pc, _, _, _ := runtime.Caller(0)
 	logger := s.Config.Log.WithFields(logrus.Fields{"transaction-id": tId, "method": runtime.FuncForPC(pc).Name()})
 
