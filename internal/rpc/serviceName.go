@@ -2,11 +2,12 @@ package rpc
 
 import (
 	"context"
+	"runtime"
 
-	grpc_reqId "github.com/hypebid/go-kit/grpc/middleware/transactionId"
 	"github.com/hypebid/go-micro-template/internal/config"
 	"github.com/hypebid/go-micro-template/internal/db"
 	"github.com/hypebid/go-micro-template/internal/rpc/pb"
+	"github.com/sirupsen/logrus"
 )
 
 type Server struct {
@@ -15,10 +16,12 @@ type Server struct {
 }
 
 func (s *Server) HealthCheck(ctx context.Context, req *pb.HealthRequest) (*pb.HealthStatus, error) {
-	// Get TransactionId from ctx
-	tId := ctx.Value(grpc_reqId.TransactionIdMarker("transaction_id_ctx_marker"))
-	s.Config.Log.Printf("TransactionId: %v", tId)
-	s.Config.Log.Printf("Received: %v", req.GetMessage())
+	// Build logger with TransactionId
+	tId := ctx.Value(s.Config.CtxMarkers.TID)
+	pc, _, _, _ := runtime.Caller(0)
+	logger := s.Config.Log.WithFields(logrus.Fields{"transaction-id": tId, "method": runtime.FuncForPC(pc).Name()})
+
+	logger.Printf("received: %v", req.GetMessage())
 
 	// ping db
 	dbOnline := false
@@ -28,7 +31,7 @@ func (s *Server) HealthCheck(ctx context.Context, req *pb.HealthRequest) (*pb.He
 	}
 
 	return &pb.HealthStatus{
-		TransactionId:  "00DSKDJF882k2kd",
+		TransactionId:  tId.(string),
 		ServiceName:    s.Config.Constants.ServiceName,
 		ReleaseDate:    s.Config.Constants.ReleaseDate,
 		ReleaseSlug:    s.Config.Constants.ReleaseSlug,

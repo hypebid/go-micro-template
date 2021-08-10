@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	grpc_reqId "github.com/hypebid/go-kit/grpc/middleware/transactionId"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
@@ -24,12 +25,17 @@ type Constants struct {
 	ReleaseVersion string `json:"release_version"`
 }
 
+type CtxMarkers struct {
+	TID grpc_reqId.TransactionIdMarker
+}
+
 type PsqlInstance struct {
 	DB *gorm.DB
 }
 
 type Config struct {
 	Constants
+	CtxMarkers
 	Psql PsqlInstance
 	Log  *logrus.Logger
 }
@@ -51,6 +57,11 @@ func NewServiceConfig() (*Config, error) {
 		ReleaseDate:    os.Getenv("RELEASE_DATE"),
 		ReleaseSlug:    os.Getenv("RELEASE_SLUG"),
 		ReleaseVersion: os.Getenv("RELEASE_VERSION"),
+	}
+
+	// Initialize markers
+	c.CtxMarkers = CtxMarkers{
+		TID: "transaction_id_ctx_marker",
 	}
 
 	// create logger

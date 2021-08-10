@@ -36,6 +36,7 @@ func main() {
 
 	grpcServer := grpc.NewServer(
 		grpc_middleware.WithStreamServerChain(
+			grpc_reqId.StreamServerInterceptor(c.Log),
 			grpc_ctxtags.StreamServerInterceptor(),
 			grpc_logrus.StreamServerInterceptor(logrus.NewEntry(c.Log), logOpts...),
 			grpc_recovery.StreamServerInterceptor(recovOpts...)),

@@ -20,5 +20,5 @@ A Golang micro-service template. The boilerplate code for all of Hype Bid's micr
   - Transaction Id
   - Hash validation check
 - Go tests
-- Cue integration / validation
 - Move code to go-kit
+- Cue integration / validation ?
