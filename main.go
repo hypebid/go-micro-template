@@ -28,6 +28,9 @@ func main() {
 
 	logOpts := []grpc_logrus.Option{}
 	recovOpts := []grpc_recovery.Option{}
+	reqAuthOpts := grpc_reqAuth.Options{
+		HashSecret: c.Constants.HashSecret,
+	}
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", c.Constants.Port))
 	if err != nil {
@@ -44,7 +47,7 @@ func main() {
 			grpc_recovery.StreamServerInterceptor(recovOpts...)),
 		grpc_middleware.WithUnaryServerChain(
 			grpc_reqId.UnaryServerInterceptor(c.Log),
-			grpc_reqAuth.UnaryServerInterceptor(c.Log),
+			grpc_reqAuth.UnaryServerInterceptor(c.Log, reqAuthOpts),
 			grpc_ctxtags.UnaryServerInterceptor(),
 			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(c.Log), logOpts...),
 			grpc_recovery.UnaryServerInterceptor(recovOpts...)),

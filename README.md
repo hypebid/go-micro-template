@@ -19,6 +19,7 @@ A Golang micro-service template. The boilerplate code for all of Hype Bid's micr
 ### Todo
 - Custom Middleware
   - Hash validation check
+- Prometheus metrics integrated
 - Go tests
 - Move code to go-kit
 - Cue integration / validation ?
