@@ -16,13 +16,18 @@ type Server struct {
 	Config *config.Config
 }
 
+func initLogger(s *Server, tId string, methodName string) *logrus.Entry {
+	// Build logger with TransactionId
+	return s.Config.Log.WithFields(logrus.Fields{"transaction-id": tId, "method": methodName})
+}
+
 func (s *Server) HealthCheck(ctx context.Context, req *pb.HealthRequest) (*pb.HealthStatus, error) {
 	// Build logger with TransactionId
 	tId := ctx.Value(middleware.Grpc_ReqId_Marker)
 	pc, _, _, _ := runtime.Caller(0)
-	logger := s.Config.Log.WithFields(logrus.Fields{"transaction-id": tId, "method": runtime.FuncForPC(pc).Name()})
+	logger := initLogger(s, tId.(string), runtime.FuncForPC(pc).Name())
 
-	logger.Printf("received: %v", req.GetMessage())
+	logger.Info("received: ", req.GetMessage())
 
 	// ping db
 	dbOnline := false
