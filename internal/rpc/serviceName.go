@@ -8,6 +8,8 @@ import (
 	"github.com/hypebid/go-micro-template/internal/config"
 	"github.com/hypebid/go-micro-template/internal/db"
 	"github.com/hypebid/go-micro-template/internal/rpc/pb"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
 )
 
@@ -15,6 +17,11 @@ type Server struct {
 	pb.UnsafeServiceNameServer
 	Config *config.Config
 }
+
+var opsProcessed = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "serviceName_processed_ops_total",
+	Help: "The total number of processed HealthCheck events",
+})
 
 func initLogger(s *Server, tId string, methodName string) *logrus.Entry {
 	// Build logger with TransactionId
@@ -35,6 +42,9 @@ func (s *Server) HealthCheck(ctx context.Context, req *pb.HealthRequest) (*pb.He
 	if ping == nil {
 		dbOnline = true
 	}
+
+	// add metric
+	opsProcessed.Inc()
 
 	return &pb.HealthStatus{
 		TransactionId:  tId.(string),

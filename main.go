@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -11,6 +12,7 @@ import (
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpc_reqAuth "github.com/hypebid/go-kit/grpc/middleware/auth"
 	grpc_reqId "github.com/hypebid/go-kit/grpc/middleware/transactionId"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 
 	"github.com/hypebid/go-micro-template/internal/config"
@@ -18,6 +20,11 @@ import (
 	"github.com/hypebid/go-micro-template/internal/rpc/pb"
 	"google.golang.org/grpc"
 )
+
+func metrics() {
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(":2111", nil)
+}
 
 func main() {
 	c, err := config.NewServiceConfig()
@@ -52,6 +59,8 @@ func main() {
 			grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(c.Log), logOpts...),
 			grpc_recovery.UnaryServerInterceptor(recovOpts...)),
 	)
+
+	go metrics()
 
 	pb.RegisterServiceNameServer(grpcServer, &rpc.Server{Config: c})
 
