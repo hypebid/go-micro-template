@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -36,7 +37,9 @@ func main() {
 	logOpts := []grpc_logrus.Option{}
 	recovOpts := []grpc_recovery.Option{}
 	reqAuthOpts := grpc_reqAuth.Options{
-		HashSecret: c.Constants.HashSecret,
+		HashSecret:      c.Constants.HashSecret,
+		MetadataKeyList: strings.Split(c.Constants.MetadataKeyList, ","),
+		MetadataHashKey: c.Constants.MetadataHashKey,
 	}
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", c.Constants.Port))

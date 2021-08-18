@@ -15,14 +15,16 @@ import (
 )
 
 type Constants struct {
-	Port           string `json:"port"`
-	LogLevel       string `json:"log_level"`
-	DatabaseURL    string `json:"database_url"`
-	ServiceName    string `json:"service_name"`
-	ReleaseDate    string `json:"release_date"`
-	ReleaseSlug    string `json:"release_slug"`
-	ReleaseVersion string `json:"release_version"`
-	HashSecret     string `json:"hash_secret"`
+	Port            string
+	LogLevel        string
+	DatabaseURL     string
+	ServiceName     string
+	ReleaseDate     string
+	ReleaseSlug     string
+	ReleaseVersion  string
+	HashSecret      string
+	MetadataKeyList string
+	MetadataHashKey string
 }
 
 type PsqlInstance struct {
@@ -45,14 +47,16 @@ func NewServiceConfig() (*Config, error) {
 	c := Config{}
 	// Load constants
 	c.Constants = Constants{
-		Port:           os.Getenv("PORT"),
-		LogLevel:       os.Getenv("LOG_LEVEL"),
-		DatabaseURL:    os.Getenv("DATABASE_URL"),
-		ServiceName:    os.Getenv("SERVICE_NAME"),
-		ReleaseDate:    os.Getenv("RELEASE_DATE"),
-		ReleaseSlug:    os.Getenv("RELEASE_SLUG"),
-		ReleaseVersion: os.Getenv("RELEASE_VERSION"),
-		HashSecret:     os.Getenv("HASH_SECRET"),
+		Port:            os.Getenv("PORT"),
+		LogLevel:        os.Getenv("LOG_LEVEL"),
+		DatabaseURL:     os.Getenv("DATABASE_URL"),
+		ServiceName:     os.Getenv("SERVICE_NAME"),
+		ReleaseDate:     os.Getenv("RELEASE_DATE"),
+		ReleaseSlug:     os.Getenv("RELEASE_SLUG"),
+		ReleaseVersion:  os.Getenv("RELEASE_VERSION"),
+		HashSecret:      os.Getenv("HASH_SECRET"),
+		MetadataKeyList: os.Getenv("METADATA_KEY_LIST"),
+		MetadataHashKey: os.Getenv("METADATA_HASH_KEY"),
 	}
 
 	// create logger

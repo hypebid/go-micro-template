@@ -15,11 +15,11 @@ A Golang micro-service template. The boilerplate code for all of Hype Bid's micr
 - Docker-Compose file
 - Go modules
 - Github Actions
+- Prometheus metrics integrated
 
 ### Todo
 - Custom Middleware
   - Hash validation check
-- Prometheus metrics integrated
 - Go tests
 - Move code to go-kit
 - Cue integration / validation ?
