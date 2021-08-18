@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
-	github.com/hypebid/go-kit v0.1.1
+	github.com/hypebid/go-kit v0.1.2
 	github.com/joho/godotenv v1.3.0
 	github.com/lib/pq v1.10.2
 	github.com/prometheus/client_golang v1.11.0 // indirect
@@ -15,4 +15,4 @@ require (
 	gorm.io/gorm v1.21.12
 )
 
-replace github.com/hypebid/go-kit => /Users/willmini/Development/go/src/github.com/hypebid/go-kit
+// replace github.com/hypebid/go-kit => /Users/willmini/Development/go/src/github.com/hypebid/go-kit
