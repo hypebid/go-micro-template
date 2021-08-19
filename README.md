@@ -9,6 +9,7 @@ A Golang micro-service template. The boilerplate code for all of Hype Bid's micr
   - Logrus logger
   - ctx tags
   - Recover from panics
+  - Hash validation check
 - Gorm integration with Postgres
 - .env file support
 - Docker file
@@ -18,8 +19,6 @@ A Golang micro-service template. The boilerplate code for all of Hype Bid's micr
 - Prometheus metrics integrated
 
 ### Todo
-- Custom Middleware
-  - Hash validation check
 - Go tests
 - Move code to go-kit
 - Cue integration / validation ?
