@@ -9,12 +9,14 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/hypebid/go-micro-template/internal/config"
 	"github.com/hypebid/go-micro-template/internal/rpc"
 	"github.com/hypebid/go-micro-template/internal/rpc/pb"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/test/bufconn"
@@ -23,6 +25,23 @@ import (
 const bufSize = 1024 * 1024
 
 var lis *bufconn.Listener
+
+type HeathCheckTestSuite struct {
+	suite.Suite
+	Config *config.Config
+}
+
+func (s *HeathCheckTestSuite) SetupTest() {
+	c, err := config.NewServiceConfig()
+	if err != nil {
+		log.Fatal("failed to create config")
+	}
+	s.Config = c
+}
+
+func TestHealthCheckTestSuite(t *testing.T) {
+	suite.Run(t, new(HeathCheckTestSuite))
+}
 
 func init() {
 	c, err := config.NewServiceConfig()
@@ -43,28 +62,7 @@ func init() {
 	}()
 }
 
-func bufDialer(context.Context, string) (net.Conn, error) {
-	return lis.Dial()
-}
-
-func createHash(md metadata.MD) (string, error) {
-	var hmac_message string
-	for _, v := range []string{"rpc-method", "service-name", "hypebid-noauth", "hypebid-nohash"} {
-		if len(md.Get(v)) == 0 {
-			log.Printf("rpc request does not contain this metadata: %v", v)
-			return "", errors.New("rpc request does not contain right metadata")
-		}
-		hmac_message = fmt.Sprintf("%v%v", hmac_message, md.Get(v)[0])
-	}
-	log.Println("hmac message created")
-	mac := hmac.New(sha256.New, []byte("secretstringvalue"))
-	mac.Write([]byte(hmac_message))
-	expectedMAC := mac.Sum(nil)
-
-	return string(expectedMAC), nil
-}
-
-func TestHealthCheckWithNoHash(t *testing.T) {
+func (s *HeathCheckTestSuite) TestHealthCheckWithNoHash() {
 	md := metadata.Pairs(
 		"rpc-method", "healthCheck",
 		"service-name", "testService",
@@ -75,21 +73,21 @@ func TestHealthCheckWithNoHash(t *testing.T) {
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
 	if err != nil {
-		t.Fatalf("failed to dial bufnet: %v", err)
+		s.T().Fatalf("failed to dial bufnet: %v", err)
 	}
 	defer conn.Close()
 
 	client := pb.NewServiceNameClient(conn)
 	resp, err := client.HealthCheck(ctx, &pb.HealthRequest{Message: "testing healthcheck"})
 	if err != nil {
-		t.Fatalf("health check failed: %v", err)
+		s.T().Fatalf("health check failed: %v", err)
 	}
 
 	// asserts
-	assert.Equal(t, os.Getenv("SERVICE_NAME"), resp.ServiceName, "service name should match")
+	assert.Equal(s.T(), os.Getenv("SERVICE_NAME"), resp.ServiceName, "service name should match")
 }
 
-func TestHealthCheckWithHash_Negative(t *testing.T) {
+func (s *HeathCheckTestSuite) TestHealthCheckWithHash_Negative() {
 	md := metadata.Pairs(
 		"rpc-method", "healthCheck",
 		"service-name", "testService",
@@ -100,7 +98,7 @@ func TestHealthCheckWithHash_Negative(t *testing.T) {
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
 	if err != nil {
-		t.Fatalf("failed to dial bufnet: %v", err)
+		s.T().Fatalf("failed to dial bufnet: %v", err)
 	}
 	defer conn.Close()
 
@@ -108,36 +106,57 @@ func TestHealthCheckWithHash_Negative(t *testing.T) {
 	resp, err := client.HealthCheck(ctx, &pb.HealthRequest{Message: "testing healthcheck"})
 
 	// asserts
-	assert.Nil(t, resp)
-	assert.Contains(t, err.Error(), "auth issue")
+	assert.Nil(s.T(), resp)
+	assert.Contains(s.T(), err.Error(), "auth issue")
 }
 
-func TestHealthCheckWithHash_Positive(t *testing.T) {
+func (s *HeathCheckTestSuite) TestHealthCheckWithHash_Positive() {
 	md := metadata.Pairs(
 		"rpc-method", "healthCheck",
 		"service-name", "testService",
 		"hypebid-noauth", "false",
 		"hypebid-nohash", "false",
 	)
-	hash, err := createHash(md)
+	hash, err := createHash(md, s.Config)
 	if err != nil {
-		t.Fatalf("failed to make hash: %v", err)
+		s.T().Fatalf("failed to make hash: %v", err)
 	}
 	md.Append("hypebid-hash-bin", hash)
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
 	if err != nil {
-		t.Fatalf("failed to dial bufnet: %v", err)
+		s.T().Fatalf("failed to dial bufnet: %v", err)
 	}
 	defer conn.Close()
 
 	client := pb.NewServiceNameClient(conn)
 	resp, err := client.HealthCheck(ctx, &pb.HealthRequest{Message: "testing healthcheck"})
 	if err != nil {
-		t.Fatalf("failed to make request: %v", err)
+		s.T().Fatalf("failed to make request: %v", err)
 	}
 
 	// asserts
-	assert.NotNil(t, resp)
+	assert.NotNil(s.T(), resp)
+}
+
+func bufDialer(context.Context, string) (net.Conn, error) {
+	return lis.Dial()
+}
+
+func createHash(md metadata.MD, c *config.Config) (string, error) {
+	var hmac_message string
+	for _, v := range strings.Split(c.Constants.MetadataKeyList, ",") {
+		if len(md.Get(v)) == 0 {
+			log.Printf("rpc request does not contain this metadata: %v", v)
+			return "", errors.New("rpc request does not contain right metadata")
+		}
+		hmac_message = fmt.Sprintf("%v%v", hmac_message, md.Get(v)[0])
+	}
+	log.Println("hmac message created")
+	mac := hmac.New(sha256.New, []byte(c.Constants.HashSecret))
+	mac.Write([]byte(hmac_message))
+	expectedMAC := mac.Sum(nil)
+
+	return string(expectedMAC), nil
 }
