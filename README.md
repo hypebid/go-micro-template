@@ -11,10 +11,9 @@ A Golang micro-service template. The boilerplate code for all of Hype Bid's micr
   - Recover from panics
   - Hash validation check
 - Gorm integration with Postgres
-- .env file support
+- [Doppler](https://docs.doppler.com/docs/start) for secrets
 - Docker file
 - Docker-Compose file
-- Doppler for secrets
 - Go modules
 - Github Actions
 - Prometheus metrics integrated
