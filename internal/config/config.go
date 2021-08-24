@@ -3,11 +3,9 @@ package config
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
@@ -40,10 +38,6 @@ type Config struct {
 var ServiceConfig Config
 
 func NewServiceConfig() (*Config, error) {
-	err := initEnv()
-	if err != nil {
-		log.Println("initEnv err")
-	}
 	c := Config{}
 	// Load constants
 	c.Constants = Constants{
@@ -109,13 +103,4 @@ func getDSN(url string) string {
 	dbname = s4[1]
 
 	return fmt.Sprintf("host=%v user=%v password=%v dbname=%v port=%v sslmode=disable", host, user, password, dbname, port)
-}
-
-func initEnv() error {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("initEnv > Load err")
-		return err
-	}
-	return nil
 }

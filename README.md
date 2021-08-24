@@ -14,6 +14,7 @@ A Golang micro-service template. The boilerplate code for all of Hype Bid's micr
 - .env file support
 - Docker file
 - Docker-Compose file
+- Doppler for secrets
 - Go modules
 - Github Actions
 - Prometheus metrics integrated
@@ -22,3 +23,14 @@ A Golang micro-service template. The boilerplate code for all of Hype Bid's micr
 - Go tests
 - Move code to go-kit
 - Cue integration / validation ?
+
+## Run Application Using Doppler
+```
+go build -o bin/micro-template -v .
+doppler run --command="./bin/micro-template"
+```
+
+## Run Tests Using Doppler
+```
+doppler run --command="go test ./tests"
+```
