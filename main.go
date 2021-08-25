@@ -5,14 +5,15 @@ import (
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	_ "github.com/quasilyte/go-ruleguard/dsl"
 
 	"github.com/hypebid/go-micro-template/internal/config"
 	"github.com/hypebid/go-micro-template/internal/rpc"
 )
 
-func metrics() {
+func metrics(c *config.Config) {
 	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(":2111", nil)
+	c.Log.Fatal(http.ListenAndServe(":2111", nil))
 }
 
 func main() {
@@ -23,7 +24,7 @@ func main() {
 	}
 
 	c.Log.Info("starting metrics route...")
-	go metrics()
+	go metrics(c)
 	c.Log.Info("done")
 
 	c.Log.Info("setting up grpc server...")

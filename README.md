@@ -17,11 +17,13 @@ A Golang micro-service template. The boilerplate code for all of Hype Bid's micr
 - Go modules
 - Github Actions
 - Prometheus metrics integrated
-
-### Todo
 - Go tests
-- Move code to go-kit
-- Cue integration / validation ?
+- [pre-commit ci](https://pre-commit.com/)
+
+## Install pre-commit
+```
+brew install pre-commit
+```
 
 ## Run Application Using Doppler
 ```
